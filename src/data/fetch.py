@@ -269,7 +269,11 @@ def load_market_returns(start: str = "2019-01-01") -> pd.Series:
     """
     spy = yf.download("SPY", start=start, auto_adjust=True, progress=False)
     spy.index = pd.to_datetime(spy.index).tz_localize(None)
-    return spy["Close"].pct_change().rename("market")
+    close = spy["Close"]
+    # yfinance may return a DataFrame with MultiIndex columns for single ticker
+    if isinstance(close, pd.DataFrame):
+        close = close.iloc[:, 0]
+    return close.pct_change().rename("market")
 
 
 # ------------------------------------------------------------------

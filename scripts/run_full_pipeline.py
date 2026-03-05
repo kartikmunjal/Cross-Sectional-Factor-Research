@@ -141,8 +141,9 @@ def main():
 
     ranker = MultiFactorRanking()
     all_dates = returns_dict[21].index
-    monthly = pd.DatetimeIndex(all_dates).to_period("M")
-    rebal_dates = all_dates.groupby(monthly).last()
+    rebal_dates = pd.DatetimeIndex(
+        pd.Series(all_dates, index=all_dates).resample("ME").last().dropna()
+    )
 
     quintile_ret = quintile_returns(
         {k: factors[k] for k in top_factors if k in factors},

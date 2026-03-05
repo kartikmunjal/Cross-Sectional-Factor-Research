@@ -220,13 +220,13 @@ def run_fama_macbeth_panel(
     """
     # Resample to monthly: use end-of-month values
     def to_monthly(df: pd.DataFrame) -> pd.DataFrame:
-        return df.resample(frequency).last()
+        return df.resample(frequency.replace("M", "ME")).last()
 
     ret_m = to_monthly(returns)
     results = []
 
     for fname, fdata in factors.items():
-        f_m = to_monthly(fdata)
+        f_m = to_monthly(fdata)  # noqa
         try:
             fm = FamaMacBeth(nw_lags=nw_lags)
             fm.fit(f_m, ret_m)

@@ -89,8 +89,10 @@ class WalkForwardBacktest:
         if end:
             all_dates = all_dates[all_dates <= end]
 
-        rebal_dates = pd.DatetimeIndex(all_dates).to_period(self.rebal_freq)
-        rebal_dates = all_dates.groupby(rebal_dates).last()
+        freq = self.rebal_freq.replace("M", "ME").replace("W", "W-FRI")
+        rebal_dates = pd.DatetimeIndex(
+            pd.Series(all_dates, index=all_dates).resample(freq).last().dropna()
+        )
 
         records = []
         prev_weights = pd.Series(dtype=float)
