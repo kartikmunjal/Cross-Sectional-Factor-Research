@@ -11,6 +11,9 @@ The alt-data repo writes parquet files under `results/<run>/factor_panels/`:
 WSB_MENTION_Z.parquet
 WSB_SENTIMENT_Z.parquet
 WSB_ATTENTION_SHOCK_Z.parquet
+WSB_WEB_TRAFFIC_LEVEL_Z.parquet
+WSB_WEB_TRAFFIC_GROWTH_Z.parquet
+WSB_WEB_TRAFFIC_SHOCK_Z.parquet
 ```
 
 Each file is a point-in-time factor panel:
@@ -53,8 +56,9 @@ This repo owns broader cross-sectional comparison against traditional factors.
 
 The combined workflow answers the actual research question:
 
-> Does retail attention add incremental stock-level predictive power relative to
-> price, volatility, value, quality, and liquidity factors?
+> Do retail attention and operational web-traffic signals add incremental
+> stock-level predictive power relative to price, volatility, value, quality,
+> and liquidity factors?
 
 ## Implementation Notes
 

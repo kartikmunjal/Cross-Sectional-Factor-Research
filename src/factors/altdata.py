@@ -32,6 +32,24 @@ ALT_FACTOR_META = {
         "paper": "Retail attention / social media sentiment",
         "description": "Cross-sectional z-score of abnormal WSB ticker attention vs trailing baseline.",
     },
+    "WSB_WEB_TRAFFIC_LEVEL_Z": {
+        "group": "Alternative Data",
+        "horizon": "Monthly",
+        "paper": "Operational web traffic / consumer demand",
+        "description": "Cross-sectional z-score of log monthly web visits.",
+    },
+    "WSB_WEB_TRAFFIC_GROWTH_Z": {
+        "group": "Alternative Data",
+        "horizon": "Monthly",
+        "paper": "Operational web traffic / consumer demand",
+        "description": "Cross-sectional z-score of monthly web traffic growth.",
+    },
+    "WSB_WEB_TRAFFIC_SHOCK_Z": {
+        "group": "Alternative Data",
+        "horizon": "Monthly",
+        "paper": "Operational web traffic / consumer demand",
+        "description": "Cross-sectional z-score of abnormal web traffic versus trailing baseline.",
+    },
 }
 
 
