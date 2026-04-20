@@ -18,6 +18,7 @@ from src.factors.momentum  import Momentum12_1, Momentum6_1, Momentum3_1, ShortT
 from src.factors.volatility import IdiosyncraticVol, Beta, RealizedVol, AmihudIlliquidity
 from src.factors.value      import BookToMarket, EarningsYield, CompositeValue
 from src.factors.quality    import GrossProfitability, ReturnOnEquity, OperatingProfitability, QualityComposite
+from src.factors.altdata import ALT_FACTOR_META
 
 log = logging.getLogger(__name__)
 
@@ -69,6 +70,7 @@ FACTOR_META = {
     "ROE":         {"group": "Quality",    "horizon": "TTM", "paper": "Fama & French 2015"},
     "OPER_MARGIN": {"group": "Quality",    "horizon": "TTM", "paper": ""},
     "QUALITY_COMP":{"group": "Quality",    "horizon": "TTM", "paper": "Composite"},
+    **ALT_FACTOR_META,
 }
 
 
@@ -130,6 +132,15 @@ def factor_summary_table() -> pd.DataFrame:
     """Return a formatted table of all factors with metadata."""
     rows = []
     for name, meta in FACTOR_META.items():
+        if name in ALT_FACTOR_META:
+            rows.append({
+                "Factor": name,
+                "Group": meta["group"],
+                "Horizon": meta["horizon"],
+                "Academic Reference": meta["paper"],
+                "Description": meta["description"],
+            })
+            continue
         rows.append({
             "Factor": name,
             "Group": meta["group"],

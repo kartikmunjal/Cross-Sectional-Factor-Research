@@ -30,6 +30,7 @@ from src.data.fetch import (
     load_market_returns, download_fundamentals, compute_returns,
 )
 from src.factors.registry import build_all_factors, factor_summary_table, FACTOR_REGISTRY
+from src.factors.altdata import load_alt_factor_panels, merge_factor_panels
 from src.analytics.ic_analysis import compute_ic_table, compute_ic_decay_table
 from src.analytics.fama_macbeth import run_fama_macbeth_panel
 from src.portfolio.ranking import MultiFactorRanking, quintile_returns
@@ -48,6 +49,8 @@ def main():
     parser.add_argument("--n-tickers", type=int, default=None)
     parser.add_argument("--factors", nargs="+", default=None,
                         help="Subset of factors to run (default: all)")
+    parser.add_argument("--alt-factor-dir", default=None,
+                        help="Directory of exported alt-data parquet panels, e.g. ../alt-data-equity-signals/results/run/factor_panels")
     parser.add_argument("--save", action="store_true")
     args = parser.parse_args()
 
@@ -87,6 +90,14 @@ def main():
         factor_names=args.factors,
         preprocess=True,
     )
+    if args.alt_factor_dir:
+        alt_factors = load_alt_factor_panels(
+            args.alt_factor_dir,
+            tickers=tickers,
+            start=args.start,
+        )
+        factors = merge_factor_panels(factors, alt_factors)
+        log.info(f"Loaded {len(alt_factors)} alt-data factors from {args.alt_factor_dir}")
     log.info(f"Computed {len(factors)} factors")
 
     # ----------------------------------------------------------------
