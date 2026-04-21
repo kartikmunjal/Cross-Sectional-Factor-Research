@@ -14,6 +14,96 @@
 
 *Run `python scripts/run_full_pipeline.py --save` to reproduce.*
 
+## Actual Connected Alt-Data Results
+
+This repo has also been run on the real WSB factor panels exported by
+[`alt-data-equity-signals`](https://github.com/kartikmunjal/alt-data-equity-signals).
+The real public WSB sample covers **six tickers** only:
+`AAPL`, `AMC`, `GME`, `MSFT`, `NOK`, and `TSLA`.
+
+Command:
+
+```bash
+python scripts/run_full_pipeline.py \
+  --start 2020-10-01 \
+  --tickers GME AMC AAPL MSFT NOK TSLA \
+  --alt-factor-dir ../alt-data-equity-signals/results/real_figshare_wsb/factor_panels \
+  --min-stocks 3 \
+  --save
+```
+
+Output files are in `results/`, including `results/ic_summary.csv`,
+`results/fama_macbeth.csv`, `results/backtest_results.csv`, and
+`results/figures/factor_research_summary.png`.
+
+### WSB Signal Results
+
+| Factor | 21d Mean IC | ICIR | t-stat | p-value | Periods | Read |
+|---|---:|---:|---:|---:|---:|---|
+| `WSB_MENTION_Z` | -0.0717 | -0.1306 | -2.56 | 0.0109 | 384 | higher mention intensity predicted underperformance |
+| `WSB_ATTENTION_SHOCK_Z` | -0.0148 | -0.0293 | -0.57 | 0.5673 | 382 | weak by rank IC |
+| `WSB_SENTIMENT_Z` | 0.0036 | 0.0060 | 0.10 | 0.9178 | 297 | no signal |
+
+The Fama-MacBeth table shows the clearest alt-data finding:
+
+| Factor | Mean Lambda | NW t-stat | p-value | Annualized Lambda | Mean R2 | Interpretation |
+|---|---:|---:|---:|---:|---:|---|
+| `WSB_ATTENTION_SHOCK_Z` | -0.0433 | -2.70 | 0.0146 | -0.5194 | 0.2677 | abnormal WSB attention is contrarian at the 21d horizon |
+| `WSB_MENTION_Z` | -0.0160 | -1.27 | 0.2196 | -0.1921 | 0.3078 | negative but not NW-significant |
+| `WSB_SENTIMENT_Z` | -0.0655 | -0.73 | 0.4751 | -0.7860 | 0.2273 | not significant |
+
+Investment read: the significant `WSB_ATTENTION_SHOCK_Z` coefficient is negative,
+which supports a mean-reversion thesis: crowded retail attention appears to mark
+temporary price inflation rather than persistent positive alpha. This is the connection
+to an active-investment question: high retail-attention names may be candidates for
+short or underweight review, especially when paired with borrow stress, days-to-cover,
+or other crowded-short diagnostics.
+
+### Corrected Long-Short Backtest
+
+The walk-forward output now has an actual short leg. The earlier run was mislabeled:
+`n_short` was zero because turnover-control normalization accidentally flipped short
+weights positive. That code path has been fixed, and the current `backtest_results.csv`
+has `n_short > 0` in **67/67** monthly rows.
+
+Corrected six-name connected run:
+
+| Metric | Value |
+|---|---:|
+| Composite factors | `IVOL`, `RVOL`, `ILLIQ` |
+| Annualized gross return | 72.9% |
+| Annualized net return | 72.5% |
+| Net Sharpe | 0.79 |
+| Max drawdown | -54.1% |
+| Monthly hit rate | 56.7% |
+| Average turnover | 25.5% |
+| Total net return | 615.0% |
+
+This is **not** a production strategy result. It is a tiny, event-heavy six-name
+diagnostic run. The value is that the alt-data panels flow through the same IC,
+Fama-MacBeth, quintile, and walk-forward machinery as the core factor library.
+
+### Point-In-Time Status
+
+The factor code evaluates factor values dated `T` against forward close-to-close
+returns from `T` to `T+h`. For daily price-derived factors and WSB factors, this is a
+research alignment convention, not a fully executable point-in-time convention. A
+production backtest should compute signals after the close on date `T`, trade no earlier
+than the next session, and evaluate returns from `T+1` onward. The current connected
+real-data results should therefore be interpreted as signal diagnostics, not live
+execution P&L.
+
+### Known Data Quality Gaps
+
+- The real WSB universe is only six names and is biased toward the 2020-2022 meme-stock
+episode.
+- `GPOA` and `QUALITY_COMP` remain NaN in the connected six-name run because yfinance
+does not provide enough gross-profit / total-assets coverage for that small universe.
+The fundamentals loader now falls back to the latest non-empty cache when a current
+yfinance fetch fails, but proper point-in-time fundamentals require Compustat/FactSet.
+- Web/app/job-posting/credit-card style operational alt-data is not included in the
+real run; only the schema and feature builders exist in the alt-data repo.
+
 ## Factor Library (16 factors)
 
 | Group | Factor | Description | Reference |

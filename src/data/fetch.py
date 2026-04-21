@@ -225,7 +225,13 @@ def download_fundamentals(
     """
     cache_path = RAW_DIR / f"fundamentals_{date.today().isoformat()}.parquet"
     if cache and cache_path.exists():
-        return pd.read_parquet(cache_path)
+        cached = pd.read_parquet(cache_path)
+        if not cached.empty and len(cached.columns) > 0:
+            return cached.reindex(tickers)
+        fallback = _latest_nonempty_fundamentals_cache(exclude=cache_path)
+        if fallback is not None:
+            log.warning(f"Today's fundamentals cache is empty; using fallback {fallback}")
+            return pd.read_parquet(fallback).reindex(tickers)
 
     FIELDS = [
         "trailingPE", "priceToBook", "returnOnEquity",
@@ -251,11 +257,30 @@ def download_fundamentals(
 
     df = pd.DataFrame(rows).set_index("ticker")
     df = df.apply(pd.to_numeric, errors="coerce")
+    if df.empty or len(df.columns) == 0:
+        fallback = _latest_nonempty_fundamentals_cache(exclude=cache_path)
+        if fallback is not None:
+            log.warning(f"Fundamentals fetch returned no fields; using fallback {fallback}")
+            return pd.read_parquet(fallback).reindex(tickers)
 
     RAW_DIR.mkdir(parents=True, exist_ok=True)
     df.to_parquet(cache_path)
     log.info(f"Saved fundamentals ({df.shape}) to {cache_path}")
     return df
+
+
+def _latest_nonempty_fundamentals_cache(exclude: Path | None = None) -> Path | None:
+    """Return the newest fundamentals cache with at least one data column."""
+    for path in sorted(RAW_DIR.glob("fundamentals_*.parquet"), reverse=True):
+        if exclude is not None and path == exclude:
+            continue
+        try:
+            frame = pd.read_parquet(path)
+        except Exception:
+            continue
+        if not frame.empty and len(frame.columns) > 0:
+            return path
+    return None
 
 
 # ------------------------------------------------------------------

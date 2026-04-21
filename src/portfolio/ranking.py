@@ -92,12 +92,10 @@ class MultiFactorRanking:
         -------
         pd.Series of quintile labels (1–5) indexed by ticker
         """
-        return pd.qcut(
-            composite,
-            q=self.n_quintiles,
-            labels=range(1, self.n_quintiles + 1),
-            duplicates="drop",
-        )
+        ranks = composite.rank(method="first")
+        n_buckets = min(self.n_quintiles, len(ranks))
+        labels = list(range(n_buckets, 0, -1))
+        return pd.qcut(ranks, q=n_buckets, labels=labels).astype(int)
 
     def build_portfolio(
         self,
@@ -243,6 +241,5 @@ def apply_turnover_control(
         blended[long_mask] /= blended[long_mask].sum()
     if short_mask.sum() > 0:
         blended[short_mask] /= blended[short_mask].abs().sum()
-        blended[short_mask] *= -1
 
     return blended
