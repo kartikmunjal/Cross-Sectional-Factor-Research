@@ -14,6 +14,28 @@
 
 *Run `python scripts/run_full_pipeline.py --save` to reproduce.*
 
+## Actual Signal-Level Results
+
+The latest committed output in `results/` is the connected real-data run over the
+six-name WSB universe (`AAPL`, `AMC`, `GME`, `MSFT`, `NOK`, `TSLA`) from
+2020-10-01 through 2026-04-17. It is intentionally small because it matches the
+free public WSB sample, but it makes the signal diagnostics explicit.
+
+Traditional factors were stronger and cleaner than the WSB factors in this run:
+
+| Factor | 21d Mean IC | ICIR | t-stat | p-value | IC Decay: 1d -> 5d -> 21d -> 63d | Read |
+|---|---:|---:|---:|---:|---|---|
+| `IVOL` | 0.1108 | 0.2161 | 7.94 | 4.2e-15 | 0.0553 -> 0.0796 -> 0.1108 -> 0.1927 | low-vol/quality tilt strengthens with horizon |
+| `RVOL` | 0.1120 | 0.2104 | 7.61 | 5.2e-14 | 0.0511 -> 0.0755 -> 0.1120 -> 0.1914 | realized volatility signal has similar slow-horizon behavior |
+| `MOM_12_1` | 0.0702 | 0.1391 | 4.65 | 3.7e-06 | 0.0188 -> 0.0440 -> 0.0702 -> 0.1341 | momentum signal improves as the forecast horizon lengthens |
+| `ILLIQ` | -0.0758 | -0.1623 | -5.96 | 3.1e-09 | -0.0428 -> -0.0663 -> -0.0758 -> -0.1184 | illiquidity is negatively related to forward returns in this sample |
+
+Interview-ready read: `IVOL` is the cleanest signal in the current output. It has
+21-day mean IC of **0.1108**, ICIR of **0.2161**, and a monotonic IC decay curve
+that strengthens from 1 day to 63 days. That is directionally consistent with the
+Ang et al. (2006) volatility anomaly: lower idiosyncratic volatility names tend to
+rank better over slower horizons after cross-sectional standardization.
+
 ## Actual Connected Alt-Data Results
 
 This repo has also been run on the real WSB factor panels exported by
@@ -82,6 +104,26 @@ Corrected six-name connected run:
 This is **not** a production strategy result. It is a tiny, event-heavy six-name
 diagnostic run. The value is that the alt-data panels flow through the same IC,
 Fama-MacBeth, quintile, and walk-forward machinery as the core factor library.
+
+### Multi-Factor Composite Construction
+
+The composite construction is deliberately simple and auditable:
+
+1. Compute each candidate factor as a `date x ticker` panel.
+2. Winsorize and cross-sectionally z-score each factor by date.
+3. Rank all factors by absolute 21-day ICIR.
+4. Select the top three factors for the walk-forward composite.
+5. Combine selected factor scores with an equal-weight average by ticker/date.
+6. Rank the composite cross-sectionally each rebalance date.
+7. Long the highest-score bucket and short the lowest-score bucket, equal-weighted
+   within each leg.
+8. Apply turnover control by blending toward previous weights when one-way turnover
+   exceeds the configured cap.
+
+The current connected run selected `IVOL`, `RVOL`, and `ILLIQ`. The code supports
+custom factor weights through `MultiFactorRanking(factor_weights=...)`, but the
+committed pipeline uses equal weights to keep the composite transparent and avoid
+overfitting a six-name sample.
 
 ### Point-In-Time Status
 
