@@ -233,8 +233,19 @@ def run_fama_macbeth_panel(
             row = fm.summary().loc["lambda"].to_dict()
             row["factor"] = fname
             results.append(row)
-        except Exception as e:
-            results.append({"factor": fname, "mean_lambda": np.nan, "t_stat_nw": np.nan})
+        except Exception:
+            results.append({
+                "factor": fname,
+                "mean_lambda": np.nan,
+                "std_lambda": np.nan,
+                "t_stat_ols": np.nan,
+                "t_stat_nw": np.nan,
+                "p_value_nw": np.nan,
+                "significant": False,
+                "annualized": np.nan,
+                "mean_r2": np.nan,
+                "n_periods": 0,
+            })
 
     return pd.DataFrame(results).set_index("factor").sort_values("t_stat_nw", ascending=False)
 

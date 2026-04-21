@@ -246,14 +246,18 @@ def _plot_all(ic_table, fm_table, quintile_ret, bt_results, attribution, save):
     # 3. FM t-stats
     ax = fig.add_subplot(gs[1, :2])
     fm_valid = fm_table["t_stat_nw"].dropna().sort_values(ascending=True)
-    colors = ["seagreen" if v > 2 else ("crimson" if v < -2 else "steelblue") for v in fm_valid]
-    fm_valid.plot.barh(ax=ax, color=colors, alpha=0.8)
-    ax.axvline(2.0, color="green", lw=1, ls="--", alpha=0.6, label="|t|=2.0")
-    ax.axvline(-2.0, color="green", lw=1, ls="--", alpha=0.6)
-    ax.axvline(0, color="black", lw=0.8)
-    ax.set_title("Fama-MacBeth t-statistics (Newey-West)", fontsize=12)
-    ax.set_xlabel("t-statistic (|t| > 2 = significant at 5%)")
-    ax.legend(fontsize=8)
+    if fm_valid.empty:
+        ax.text(0.5, 0.5, "No valid Fama-MacBeth t-stats", ha="center", va="center")
+        ax.set_axis_off()
+    else:
+        colors = ["seagreen" if v > 2 else ("crimson" if v < -2 else "steelblue") for v in fm_valid]
+        fm_valid.plot.barh(ax=ax, color=colors, alpha=0.8)
+        ax.axvline(2.0, color="green", lw=1, ls="--", alpha=0.6, label="|t|=2.0")
+        ax.axvline(-2.0, color="green", lw=1, ls="--", alpha=0.6)
+        ax.axvline(0, color="black", lw=0.8)
+        ax.set_title("Fama-MacBeth t-statistics (Newey-West)", fontsize=12)
+        ax.set_xlabel("t-statistic (|t| > 2 = significant at 5%)")
+        ax.legend(fontsize=8)
 
     # 4. Quintile bar chart
     ax = fig.add_subplot(gs[1, 2])
