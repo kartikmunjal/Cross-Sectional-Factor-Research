@@ -200,6 +200,7 @@ def run_fama_macbeth_panel(
     returns: pd.DataFrame,
     frequency: str = "M",
     nw_lags: int = 6,
+    min_stocks: int = 50,
 ) -> pd.DataFrame:
     """
     Run Fama-MacBeth for every factor in the registry.
@@ -228,7 +229,7 @@ def run_fama_macbeth_panel(
     for fname, fdata in factors.items():
         f_m = to_monthly(fdata)  # noqa
         try:
-            fm = FamaMacBeth(nw_lags=nw_lags)
+            fm = FamaMacBeth(nw_lags=nw_lags, min_stocks=min_stocks)
             fm.fit(f_m, ret_m)
             row = fm.summary().loc["lambda"].to_dict()
             row["factor"] = fname

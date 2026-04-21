@@ -166,7 +166,7 @@ def quintile_returns(
 
     for date in rebal_dates:
         composite = ranker.composite_score(factors, date)
-        if composite.empty or len(composite) < n_quintiles * 5:
+        if composite.empty or len(composite) < n_quintiles:
             continue
 
         try:

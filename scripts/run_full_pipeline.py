@@ -47,10 +47,14 @@ def main():
     parser = argparse.ArgumentParser(description="Cross-sectional factor research pipeline")
     parser.add_argument("--start", default="2019-01-01")
     parser.add_argument("--n-tickers", type=int, default=None)
+    parser.add_argument("--tickers", nargs="+", default=None,
+                        help="Explicit ticker universe override, e.g. GME AMC AAPL MSFT NOK TSLA")
     parser.add_argument("--factors", nargs="+", default=None,
                         help="Subset of factors to run (default: all)")
     parser.add_argument("--alt-factor-dir", default=None,
                         help="Directory of exported alt-data parquet panels, e.g. ../alt-data-equity-signals/results/run/factor_panels")
+    parser.add_argument("--min-stocks", type=int, default=20,
+                        help="Minimum cross-sectional stocks required for IC/FM periods")
     parser.add_argument("--save", action="store_true")
     args = parser.parse_args()
 
@@ -62,8 +66,8 @@ def main():
     # 1. Data
     # ----------------------------------------------------------------
     log.info("=== STEP 1: Loading data ===")
-    tickers = get_sp500_universe()
-    if args.n_tickers:
+    tickers = [ticker.upper() for ticker in args.tickers] if args.tickers else get_sp500_universe()
+    if args.n_tickers and not args.tickers:
         tickers = tickers[:args.n_tickers]
 
     close        = load_close_panel(tickers, start=args.start)
@@ -104,7 +108,7 @@ def main():
     # 3. IC Analysis
     # ----------------------------------------------------------------
     log.info("=== STEP 3: IC Analysis (primary horizon: 21d) ===")
-    ic_table = compute_ic_table(factors, returns_dict, primary_horizon=21)
+    ic_table = compute_ic_table(factors, returns_dict, primary_horizon=21, min_stocks=args.min_stocks)
 
     print("\n" + "=" * 70)
     print("  IC SUMMARY TABLE — 21-day horizon")
@@ -118,7 +122,7 @@ def main():
         ic_table.to_csv(RESULTS_DIR / "ic_summary.csv")
 
     # IC decay
-    ic_decay = compute_ic_decay_table(factors, returns_dict)
+    ic_decay = compute_ic_decay_table(factors, returns_dict, min_stocks=args.min_stocks)
     print("\n  IC DECAY TABLE (Mean IC by horizon):")
     print(ic_decay.round(4).to_string())
 
@@ -129,7 +133,7 @@ def main():
     # 4. Fama-MacBeth
     # ----------------------------------------------------------------
     log.info("=== STEP 4: Fama-MacBeth regressions ===")
-    fm_table = run_fama_macbeth_panel(factors, returns_dict[21])
+    fm_table = run_fama_macbeth_panel(factors, returns_dict[21], min_stocks=args.min_stocks)
 
     print("\n" + "=" * 70)
     print("  FAMA-MACBETH RESULTS (Newey-West t-stats, monthly)")

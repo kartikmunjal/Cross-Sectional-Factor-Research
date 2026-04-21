@@ -45,6 +45,7 @@ class ICAnalysis:
         factor: pd.DataFrame,
         returns_dict: dict[int, pd.DataFrame],
         factor_name: str = "factor",
+        min_stocks: int = 20,
     ):
         """
         Parameters
@@ -56,12 +57,17 @@ class ICAnalysis:
         self.factor = factor
         self.returns_dict = returns_dict
         self.factor_name = factor_name
+        self.min_stocks = min_stocks
         self._ic_series: dict[int, pd.Series] = {}
 
     def fit(self) -> "ICAnalysis":
         """Compute IC time series for all horizons."""
         for horizon, ret_df in self.returns_dict.items():
-            self._ic_series[horizon] = _compute_ic_series(self.factor, ret_df)
+            self._ic_series[horizon] = _compute_ic_series(
+                self.factor,
+                ret_df,
+                min_stocks=self.min_stocks,
+            )
         return self
 
     def summary(self, horizon: int = 21) -> dict:
@@ -130,6 +136,7 @@ def compute_ic_table(
     factors: dict[str, pd.DataFrame],
     returns_dict: dict[int, pd.DataFrame],
     primary_horizon: int = 21,
+    min_stocks: int = 20,
 ) -> pd.DataFrame:
     """
     Compute IC summary for all factors at the primary horizon.
@@ -148,7 +155,7 @@ def compute_ic_table(
     """
     rows = []
     for fname, fdata in factors.items():
-        ica = ICAnalysis(fdata, returns_dict, factor_name=fname)
+        ica = ICAnalysis(fdata, returns_dict, factor_name=fname, min_stocks=min_stocks)
         ica.fit()
         try:
             row = ica.summary(primary_horizon)
@@ -165,6 +172,7 @@ def compute_ic_decay_table(
     factors: dict[str, pd.DataFrame],
     returns_dict: dict[int, pd.DataFrame],
     horizons: list[int] = [1, 5, 10, 21, 63, 126],
+    min_stocks: int = 20,
 ) -> pd.DataFrame:
     """
     Full IC decay table: (factor × horizon) → mean IC.
@@ -174,7 +182,7 @@ def compute_ic_decay_table(
     """
     rows = {}
     for fname, fdata in factors.items():
-        ica = ICAnalysis(fdata, returns_dict, factor_name=fname)
+        ica = ICAnalysis(fdata, returns_dict, factor_name=fname, min_stocks=min_stocks)
         ica.fit()
         row = {}
         for h in horizons:
@@ -196,6 +204,7 @@ def _compute_ic_series(
     factor: pd.DataFrame,
     returns: pd.DataFrame,
     method: str = "spearman",
+    min_stocks: int = 20,
 ) -> pd.Series:
     """
     Compute period-by-period IC (rank correlation) between factor and returns.
@@ -223,7 +232,7 @@ def _compute_ic_series(
         r_t = returns.loc[date].dropna()
 
         common_tickers = f_t.index.intersection(r_t.index)
-        if len(common_tickers) < 20:
+        if len(common_tickers) < min_stocks:
             continue
 
         f_aligned = f_t[common_tickers]

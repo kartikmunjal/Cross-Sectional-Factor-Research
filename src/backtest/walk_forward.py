@@ -100,7 +100,7 @@ class WalkForwardBacktest:
         for date in rebal_dates:
             # Build composite score
             composite = ranker.composite_score(factors, date)
-            if composite.empty or len(composite) < self.n_quintiles * 5:
+            if composite.empty or len(composite) < self.n_quintiles:
                 continue
 
             # Target weights from signal
